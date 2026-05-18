@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ror-app
+  labels:
+    app: ror-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ror-app
+  template:
+    metadata:
+      labels:
+        app: ror-app
+    spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15
+        command: ['sh', '-c', 'until pg_isready -h postgres-service -p 5432; do echo waiting; sleep 2; done']
+      containers:
+      - name: ror-app
+        image: ror-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        env:
+        - name: RAILS_ENV
+          value: "production"
+        - name: RAILS_LOG_TO_STDOUT
+          value: "true"
+        - name: RAILS_SERVE_STATIC_FILES
+          value: "true"
+        - name: RAILS_MASTER_KEY
+          value: "f7bddca6728269dbe56cc86133b66c04"
+        - name: DATABASE_URL
+          value: "postgresql://postgres:password@postgres-service:5432/ror_app_production"
