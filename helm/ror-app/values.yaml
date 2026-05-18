@@ -1,0 +1,22 @@
+replicaCount: 1
+image:
+  repository: ror-app
+  pullPolicy: Never
+  tag: "latest"
+service:
+  type: NodePort
+  port: 80
+  targetPort: 80
+env:
+  RAILS_ENV: "production"
+  RAILS_LOG_TO_STDOUT: "true"
+  RAILS_SERVE_STATIC_FILES: "true"
+  RAILS_MASTER_KEY: "f7bddca6728269dbe56cc86133b66c04"
+  DATABASE_URL: "postgresql://postgres:password@postgres-service:5432/ror_app_production"
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
