@@ -26,7 +26,7 @@ pipeline {
               ${scannerHome}/bin/sonar-scanner \
                 -Dsonar.projectKey=ror-app \
                 -Dsonar.sources=app \
-                -Dsonar.host.url=172.20.0.2:9000 \
+                -Dsonar.host.url=http://172.20.0.2:9000 \
                 -Dsonar.exclusions=vendor/*,public/*
             """
           }
