@@ -78,7 +78,7 @@ pipeline {
             git config user.email 'jenkins@ci.com'
             git config user.name 'Jenkins'
             git add helm/ror-app/values.yaml
-            git checkout main && git commit -m 'CI: Update image tag to ${IMAGE_TAG}'
+            git checkout main && git pull origin main && git commit -m 'CI: Update image tag to ${IMAGE_TAG}'
             git push https://${GIT_USER}:${GIT_PASS}@github.com/amnikil/ror-app.git main
           """
           echo "✅ Helm updated - ArgoCD deploying!"
