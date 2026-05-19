@@ -2,8 +2,10 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = "ror-app"
-    IMAGE_TAG  = "${BUILD_NUMBER}"
+    IMAGE_NAME     = "ror-app"
+    IMAGE_TAG      = "${BUILD_NUMBER}"
+    DOCKERHUB_USER = "amnikil"
+    SONAR_URL      = "http://172.20.0.2:9000"
   }
 
   stages {
@@ -20,25 +22,32 @@ pipeline {
         withSonarQubeEnv('SonarQube') {
           script {
             def scannerHome = tool 'SonarScanner'
-            sh "${scannerHome}/bin/sonar-scanner"
+            sh """
+              ${scannerHome}/bin/sonar-scanner \
+                -Dsonar.projectKey=ror-app \
+                -Dsonar.sources=app \
+                -Dsonar.host.url=172.20.0.2:9000 \
+                -Dsonar.exclusions=vendor/*,public/*
+            """
           }
         }
-        echo "✅ SonarQube scan done"
+        echo "✅ SonarQube scan complete"
       }
     }
 
     stage('3. Docker Build') {
       steps {
         sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-        sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
+        sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+        sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
         echo "✅ Docker image built"
       }
     }
 
-    stage('4. Trivy Scan') {
+    stage('4. Trivy Security Scan') {
       steps {
-        sh "trivy image --exit-code 0 --severity HIGH,CRITICAL ${IMAGE_NAME}:latest || true"
-        echo "✅ Security scan done"
+        sh "trivy image --exit-code 0 --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG} || true"
+        echo "✅ Security scan complete"
       }
     }
 
@@ -50,10 +59,9 @@ pipeline {
           passwordVariable: 'DOCKER_PASS'
         )]) {
           sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-          sh "docker tag ${IMAGE_NAME}:latest ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
-          sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
-          sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:latest"
-          echo "✅ Image pushed to DockerHub"
+          sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+          sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
+          echo "✅ Pushed to DockerHub"
         }
       }
     }
@@ -73,7 +81,7 @@ pipeline {
             git commit -m 'CI: Update image tag to ${IMAGE_TAG}'
             git push https://${GIT_USER}:${GIT_PASS}@github.com/amnikil/ror-app.git main
           """
-          echo "✅ Helm values updated — ArgoCD will auto-deploy"
+          echo "✅ Helm updated - ArgoCD deploying!"
         }
       }
     }
@@ -81,7 +89,7 @@ pipeline {
   }
 
   post {
-    success { echo '🎉 PIPELINE SUCCESS!' }
-    failure { echo '❌ PIPELINE FAILED - Check logs' }
+    success { echo '🎉 FULL PIPELINE SUCCESS!' }
+    failure { echo '❌ Pipeline failed - check logs' }
   }
 }
