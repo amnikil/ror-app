@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: ror-app
   pullPolicy: Never
-  tag: "latest"
+  tag: "21"
 service:
   type: NodePort
   port: 80
