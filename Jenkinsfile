@@ -53,7 +53,7 @@ pipeline {
             git config user.name "Jenkins"
             git stash || true
             git checkout main
-            git pull https://${GIT_USER}:${GIT_PASS}@github.com/amnikil/ror-app.git main
+            git config pull.rebase false && git pull https://${GIT_USER}:${GIT_PASS}@github.com/amnikil/ror-app.git main
             sed -i 's/tag:.*/tag: "${BUILD_NUMBER}"/' helm/ror-app/values.yaml
             git add helm/ror-app/values.yaml
             git commit -m "CI: image tag ${BUILD_NUMBER}" || true
